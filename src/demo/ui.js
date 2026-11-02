@@ -48,6 +48,7 @@ export function drawUI(map, c, S, SPEAKERS) {
   drawGpt(map, c, S, T);
   drawBars(c, S, T);
   drawBanner(c, S, T);
+  drawSections(c, S, T);
   drawSay(map, c, S, T, SPEAKERS);
   drawCardText(c, S, T);
   drawChapter(c, S, T);
@@ -125,6 +126,22 @@ function drawBanner(c, S, T) {
   const w = tw(c, b.time, B24);
   if (b.em) { const pw = tw(c, b.place, B24) + 28; rect(c, x + w + 10, 10, pw, 32, '#FFC247'); rect(c, x + w + 12, 12, pw - 4, 28, '#2A1C00'); txt(c, b.place, x + w + 24, 26, B24, '#FFC247'); chip(c, '핵심 장면', x + w + 18 + pw, 16, '#FFC247', '#2A1C00'); txt(c, b.sub, x, 52, F12, '#FFE08A'); }
   else { txt(c, b.place, x + w + 14, 26, B24, '#FFFFFF'); txt(c, b.sub, x, 50, F12, '#9AA6B8'); }
+  c.globalAlpha = 1;
+}
+
+// 장(카테고리) 표시 — 위쪽 컷신 띠 오른쪽에 1~5장을 늘어놓고 지금 장을 금색으로. 지난 장은 옅게, 다음 장은 더 옅게.
+function drawSections(c, S, T) {
+  const k = S.sec, L = S.sections; if (!k || !L) return;
+  const a = lbK(S, T) * clamp01((T - k.t0) / 0.4); if (a <= 0) return;
+  const items = L.map((s, i) => ({ s: (i + 1) + ' ' + s, cur: i + 1 === k.n, done: i + 1 < k.n }));
+  items.forEach((it) => { it.w = tw(c, it.s, it.cur ? B12 : F12) + 20; });
+  let x = 1376 - items.reduce((m, it) => m + it.w, 0) - (items.length - 1) * 6; const y = 22; // 오른쪽 끝 '시연 중지' 단추(무대 x 1390~1475)를 비켜 끝낸다
+  c.globalAlpha = a;
+  items.forEach((it) => {
+    if (it.cur) { rect(c, x, y, it.w, 22, '#FFC247'); txt(c, it.s, x + 10, y + 12, B12, '#2A1C00'); }
+    else { rect(c, x, y, it.w, 22, it.done ? '#1A2030' : '#0E1420'); txt(c, it.s, x + 10, y + 12, F12, it.done ? '#9AA6B8' : '#5E6878'); }
+    x += it.w + 6;
+  });
   c.globalAlpha = 1;
 }
 
@@ -394,7 +411,7 @@ const POPS = {
   } }
 };
 
-// ---------------------------------------------------------------- 핵심 장면 표지 (훈련 성과 분석 회의)
+// ---------------------------------------------------------------- 장 표지 (1~5장 · 4장 훈련 성과 분석 회의가 핵심 장면)
 function drawChapter(c, S, T) {
   const k = S.chapter; if (!k) return;
   const u = T - k.t0; if (u < 0 || u > k.dur) return;
@@ -406,6 +423,11 @@ function drawChapter(c, S, T) {
   rect(c, x - 6, y + 58, 6, 8, '#FFC247'); rect(c, x + w, y + 58, 6, 8, '#FFC247');
   txt(c, k.l1, 602, y + 46, B48, '#FFC247', 'center');
   txt(c, k.l2, 602, y + 94, F24, '#E8EDF5', 'center');
+  if (k.n) { // 장 번호: 표지 위에 "3장 / 5"
+    const s = k.n + '장', tot = ' / ' + (S.sections ? S.sections.length : 5), w = tw(c, s, B24) + tw(c, tot, F24) + 28;
+    rect(c, 602 - w / 2, y - 40, w, 34, 'rgba(8,10,16,0.88)'); rect(c, 602 - w / 2, y - 40, w, 2, '#FFC247');
+    txt(c, s, 602 - w / 2 + 14, y - 22, B24, '#FFC247'); txt(c, tot, 602 - w / 2 + 14 + tw(c, s, B24), y - 22, F24, '#9AA6B8');
+  }
   c.globalAlpha = 1;
 }
 

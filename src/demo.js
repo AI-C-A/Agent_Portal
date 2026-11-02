@@ -3,10 +3,11 @@
 //   demo.play(map) / demo.stop(map) / demo.toggle(map), demo.playing, demo.onChange(on)
 // 재생 중엔 map.mode = 'demo'. 시연 배우는 actor: true, demoActor: true 인 캐릭터로 넣고 끝나면 모두 지운다.
 // 평소 모드의 통신 로그·상황실 문구·패킷 칩은 재생 중에만 잠시 막는다(인스턴스 메서드를 덮었다가 끝나면 되돌림).
-import { SCRIPT as RAW, SPEAKERS } from './demo/script.js';
+import { SCRIPT as RAW, SPEAKERS, SECTIONS } from './demo/script.js';
 import { bakeProps, drawProps, cup } from './demo/props.js';
 import { drawUI, FOCUS_Y, progressHit, progressTime } from './demo/ui.js';
 import { MAP_W, MAP_H } from './layout.js';
+import { voice } from './demo/voice.js';
 
 const SCRIPT = RAW.map((s, i) => ({ s, i })).sort((a, b) => a.s.at - b.s.at || a.i - b.i).map((q) => q.s);
 const TOTAL = SCRIPT.reduce((m, s) => Math.max(m, s.at), 0);
@@ -14,6 +15,8 @@ const BEATS = SCRIPT.filter((s) => s.k === 'banner').map((s) => s.at);
 const BEAT_NAMES = SCRIPT.filter((s) => s.k === 'banner').map((s) => s.time + ' ' + s.place);
 // 진행 막대 조작 상태 (재생을 새로 만들어도 이어지게 밖에 둔다): 마우스 위치(화면 좌표), 마지막으로 움직인 때, 끌고 있는 목표 시각
 const CTL = { x: -1, y: -1, moved: 0, scrub: null };
+const VOICES = SCRIPT.filter((s) => s.voice).map((s) => s.voice); // 대사 음성(TTS) 파일 id
+let QUIET = false; // 이동(빠르게 다시 돌리기) 중에는 음성을 내지 않는다
 const CY0 = (64 + 900) / 2; // baseMap view()의 화면 중심 y
 const OVERRIDES = ['log', 'hqLine', 'send', 'sendFree', 'clock', 'drawMinimap'];
 const clamp01 = (u) => Math.max(0, Math.min(1, u));
@@ -47,17 +50,18 @@ export const demo = {
       map.drag = null; map.camT = null; map.mx = -1; map.my = -1;
       if (map.drone) { S.prev.drone = true; map.drone.ph = 'charge'; map.drone.t = 1e9; map.drone.alt = 0; map.drone.bubble = null; }
       map.setState({ flow: true, log: true });
+      voice.stop(); voice.preload(VOICES); // 앞 시연의 마지막 음성이 남아 있으면 끊고 시작
       this.playing = true;
       if (this.onChange) this.onChange(true);
     } catch (err) { console.warn('demo.play', err); safeStop(map); }
   },
-  stop(map) { if (S) safeStop(map || M); },
+  stop(map) { if (S) safeStop(map || M); else voice.stop(); }, // 끝난 뒤 남은 마무리 음성도 멈춘다
   toggle(map) { if (this.playing) this.stop(map); else this.play(map); },
 
   // 일시정지: 맵의 시간을 멈춘다(그리기는 계속 — 일시정지 표시·진행 막대가 보이게)
   get paused() { return !!(S && S.paused); },
-  pause(map) { if (!S) return; if (!S.paused) S.pausedAt = performance.now(); S.paused = true; (map || M).freeze = true; },
-  resume(map) { if (!S) return; S.paused = false; (map || M).freeze = false; },
+  pause(map) { if (!S) return; if (!S.paused) S.pausedAt = performance.now(); S.paused = true; (map || M).freeze = true; voice.pause(); },
+  resume(map) { if (!S) return; S.paused = false; (map || M).freeze = false; voice.resume(); },
   togglePause(map) { if (S && S.paused) this.resume(map); else this.pause(map); },
   // 이동: 시연은 패킷이 도착해야 다음 일이 일어나므로 중간으로 바로 뛸 수 없다. 처음부터 다시 재생해 그 시각까지 빠르게 돌린다(멈춰 있었으면 멈춘 채로).
   seek(map, t) {
@@ -67,9 +71,9 @@ export const demo = {
     this.play(map);
     const st = S; if (!st) return;
     const real = performance.now(); let now = real, n = 0;
-    map.freeze = false; map.paused = true; map.maxDt = 0.1;
+    map.freeze = false; map.paused = true; map.maxDt = 0.1; QUIET = true;
     try { while (S === st && st.T < t && n < 2000) { now += 100; map.frame(now); n++; } }
-    finally { map.maxDt = 0; map.t0 -= now - real; map.last = 0; map.paused = false; }
+    finally { map.maxDt = 0; map.t0 -= now - real; map.last = 0; map.paused = false; QUIET = false; }
     if (S === st && keepPaused) this.pause(map);
   },
   // 진행 막대: 마우스 위치(화면 좌표)와 끌기. 막대 모양·위치는 ui.js(progressHit)가 정한다.
@@ -172,7 +176,7 @@ function fresh(map) {
   return {
     T: 0, i: 0, tok: ++TOK, pend: [], actors: {}, hid: new Set(), vis: new Map(), reveal: false, rects: [], fx: {}, flags: {},
     cam: null, view: { x: c0[0], y: c0[1] - (CY0 - FOCUS_Y) / map.z, z: map.z },
-    say: null, pop: null, banner: null, card: null, chapter: null, lb: null, out: [], outDone: 0, tint: null,
+    say: null, pop: null, banner: null, card: null, chapter: null, sec: null, sections: SECTIONS, lb: null, out: [], outDone: 0, tint: null,
     ped: 0, pedV: map.pedO || 0, own: 0, clock: { base: 6 * 3600 + 29 * 60 + 40, t0: 0 },
     total: TOTAL, beats: BEATS, beatNames: BEAT_NAMES, ctl: CTL, paused: false, saved: null, prev: null
   };
@@ -199,10 +203,11 @@ function restore(map, st) {
   st.saved = null;
 }
 
-function teardown(map, fit) {
+// keepVoice: 대본이 끝까지 가서 닫힐 때만 — 마무리 문구 음성이 잘리지 않게 끝까지 재생한다
+function teardown(map, fit, keepVoice) {
   const st = S; if (!st) return;
   S = null;
-  map.freeze = false; CTL.scrub = null;
+  map.freeze = false; CTL.scrub = null; if (!keepVoice) voice.stop();
   for (let i = map.ents.length - 1; i >= 0; i--) if (map.ents[i].demoActor) map.ents.splice(i, 1);
   undim();
   st.hid.forEach((e) => { e.hide = false; });
@@ -312,13 +317,17 @@ function run(map, st, s) {
     }
     case 'lb': st.lb = { on: s.on, t0: T }; break;
     case 'card': st.card = { t0: T, dur: s.dur, l1: s.l1, l2: s.l2 }; break;
-    case 'chapter': st.chapter = { t0: T, dur: s.dur, l1: s.l1, l2: s.l2 }; break;
+    case 'chapter': st.chapter = { t0: T, dur: s.dur, l1: s.l1, l2: s.l2, n: s.n || 0 }; break;
+    case 'sec': st.sec = s.n ? { n: s.n, t0: T } : null; break; // 위쪽 띠의 장 표시 (0이면 끔)
     case 'banner': {
       st.banner = { t0: T, dur: s.dur, time: s.time, place: s.place, sub: s.sub, em: !!s.em };
       const hm = String(s.time).split(':'); st.clock = { base: (+hm[0] || 0) * 3600 + (+hm[1] || 0) * 60, t0: T };
       break;
     }
-    case 'say': st.say = { t0: T, dur: s.dur, who: s.who, text: s.text, fresh: !st.say || T - (st.say.t0 + st.say.dur) > 0.35, lines: null }; break;
+    case 'say':
+      st.say = { t0: T, dur: s.dur, who: s.who, text: s.text, fresh: !st.say || T - (st.say.t0 + st.say.dur) > 0.35, lines: null };
+      if (s.voice && !QUIET) voice.say(s.voice);
+      break;
     case 'pop': st.pop = { id: s.id, t0: T, dur: s.dur, rate: s.rate || 1, fresh: !st.pop || st.pop.id !== s.id || T - (st.pop.t0 + st.pop.dur) > 0.3 }; break;
     case 'fx': { const r = s.rate || 1; st.fx[s.name] = { t0: T, dur: s.dur * r, rate: r, p: s.p || null }; break; } // dur·u는 효과 안의 시간(rate배 빠르게)
     case 'spawn': {
@@ -357,7 +366,8 @@ function run(map, st, s) {
     case 'hide': st.rects = s.rects || []; st.reveal = !!s.reveal; break;
     case 'tint': st.tint = { a: tintNow(st), b: s.v, t0: T, dur: s.dur || 1 }; break;
     case 'gate': st.ped = s.v ? 1 : 0; break;
-    case 'end': teardown(map, true); break;
+    case 'vo': if (!QUIET) voice.say(s.voice); break; // 자막 없이 음성만 (마지막 타이틀 카드 문구)
+    case 'end': teardown(map, true, true); break;
     default: break;
   }
 }

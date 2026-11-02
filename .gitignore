@@ -6,6 +6,11 @@ assets/armygpt/
 # 이 PC에서만 쓰는 자산 제작·녹화 스크립트와 운영 메모
 tools/
 README.local.md
+# TTS 작업 파일(대사표·원본 WAV) — 시연이 쓰는 음성은 assets/voice/
+audio/
+# API 키 (절대 올리지 않음)
+.env
+.env.*
 # 개발 도구 설정·임시 파일
 .claude/
 .playwright-mcp/

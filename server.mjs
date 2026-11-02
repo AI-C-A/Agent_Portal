@@ -18,12 +18,13 @@ const TYPES = {
   '.woff2': 'font/woff2',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.mp3': 'audio/mpeg',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon'
 };
 
 // 포털에 필요한 파일만 내보낸다 — 외부에 공개(share.bat · Tailscale Funnel)해도 README·asset 영상·테스트 캡처 등은 나가지 않게
-const PUBLIC = /^\/(index\.html|styles\.css|src\/[\w\-/]+\.js|assets\/fonts\/[\w\-]+\.woff2|assets\/armygpt\/[\w\-]+\.(png|jpg))$/;
+const PUBLIC = /^\/(index\.html|styles\.css|src\/[\w\-/]+\.js|assets\/fonts\/[\w\-]+\.woff2|assets\/armygpt\/[\w\-]+\.(png|jpg)|assets\/voice\/[\w\-]+\.mp3)$/;
 
 const server = http.createServer(async (req, res) => {
   try {

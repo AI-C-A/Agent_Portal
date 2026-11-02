@@ -376,7 +376,7 @@ export function createTitle(stage, opts = {}) {
   // ---- 시작: 일곱 에이전트를 차례로 연결한 뒤 고른 화면으로 넘어간다 ----
   const BOOT = {
     ambient: { lead: '평소 모드 · 부대 전체 보기 100%', done: '연결 완료 · 부대로 들어갑니다' },
-    demo: { lead: '1분 시연 · 06:30 기상부터 68초', done: '연결 완료 · 웅비대대의 하루를 재생합니다' },
+    demo: { lead: '1분 시연 · 06:30 기상부터 86초', done: '연결 완료 · 웅비대대의 하루를 재생합니다' },
     sheet: { lead: '캐릭터 시트 · 캐릭터·차량·계급장', done: '연결 완료 · 캐릭터 시트를 엽니다' }
   };
   const bootEl = $('.t-boot'), list = $('.t-list'), bar = $('.t-bar i'), doneEl = $('.t-done');
