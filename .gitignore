@@ -1,8 +1,10 @@
 # 저장소에는 포털 코드만 올린다.
 # 보고용 화면 캡처·시연 영상
 asset/
-# ArmyGPT 실제 화면 캡처·생성 문서(공개 저장소에는 넣지 않음)
-assets/armygpt/
+# ArmyGPT 생성 문서 원본(PDF·HWPX)은 넣지 않는다. 시연이 쓰는 화면 캡처(screen-0N.jpg)와
+# 문서 첫 쪽 그림(plan-p1.png)은 다른 PC에서 clone 해도 ArmyGPT 장면이 나오게 올린다(11-02 사용자 요청)
+assets/armygpt/*.pdf
+assets/armygpt/*.hwpx
 # 이 PC에서만 쓰는 자산 제작·녹화 스크립트와 운영 메모
 tools/
 README.local.md
