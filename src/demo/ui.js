@@ -491,7 +491,7 @@ Object.assign(POPS, {
     });
     txt(c, '결심은 지휘관이 합니다', x + 14, y + h - 20, F12, '#FFC247');
   } },
-  twin: { h: 324, hex: '#45F08A', title: '디지털 트윈 일정 검증', sub: 'B안 · TIGER 반복 + 야외 병행', draw(c, x, y, w, h, u) {
+  twin: { h: 324, hex: '#45F08A', title: '디지털 트윈 검증', sub: 'B안 · TIGER 반복 + 야외 병행', draw(c, x, y, w, h, u) {
     // 다음 주 요일 × 오전·오후 일정표가 B안으로 채워지고, 기상(수요일 비)·장비 일정과 겹치지 않는지 가상으로 돌려 본다
     const mx = x + 14, my = y + 42, mw = w - 28, cw = mw / 5, rh = 52;
     const days = ['월', '화', '수', '목', '금'], plan = [['야외', 'TIGER'], ['체력', 'TIGER'], ['TIGER', 'TIGER'], ['야외', '체력'], ['TIGER', '평가']];

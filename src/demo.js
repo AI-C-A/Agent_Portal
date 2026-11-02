@@ -8,6 +8,7 @@ import { bakeProps, drawProps, cup } from './demo/props.js';
 import { drawUI, FOCUS_Y, progressHit, progressTime } from './demo/ui.js';
 import { MAP_W, MAP_H } from './layout.js';
 import { voice } from './demo/voice.js';
+import { sfx } from './demo/sfx.js';
 
 const SCRIPT = RAW.map((s, i) => ({ s, i })).sort((a, b) => a.s.at - b.s.at || a.i - b.i).map((q) => q.s);
 const TOTAL = SCRIPT.reduce((m, s) => Math.max(m, s.at), 0);
@@ -16,7 +17,8 @@ const BEAT_NAMES = SCRIPT.filter((s) => s.k === 'banner').map((s) => s.time + ' 
 // 진행 막대 조작 상태 (재생을 새로 만들어도 이어지게 밖에 둔다): 마우스 위치(화면 좌표), 마지막으로 움직인 때, 끌고 있는 목표 시각
 const CTL = { x: -1, y: -1, moved: 0, scrub: null };
 const VOICES = SCRIPT.filter((s) => s.voice).map((s) => s.voice); // 대사 음성(TTS) 파일 id
-let QUIET = false; // 이동(빠르게 다시 돌리기) 중에는 음성을 내지 않는다
+const SOUNDS = [...new Set(SCRIPT.filter((s) => s.k === 'sfx').map((s) => s.name))]; // 효과음 (assets/sfx)
+let QUIET = false; // 이동(빠르게 다시 돌리기) 중에는 음성·효과음을 내지 않는다
 const CY0 = (64 + 900) / 2; // baseMap view()의 화면 중심 y
 const OVERRIDES = ['log', 'hqLine', 'send', 'sendFree', 'clock', 'drawMinimap'];
 const clamp01 = (u) => Math.max(0, Math.min(1, u));
@@ -50,18 +52,18 @@ export const demo = {
       map.drag = null; map.camT = null; map.mx = -1; map.my = -1;
       if (map.drone) { S.prev.drone = true; map.drone.ph = 'charge'; map.drone.t = 1e9; map.drone.alt = 0; map.drone.bubble = null; }
       map.setState({ flow: true, log: true });
-      voice.stop(); voice.preload(VOICES); // 앞 시연의 마지막 음성이 남아 있으면 끊고 시작
+      voice.stop(); sfx.stop(); voice.preload(VOICES); sfx.preload(SOUNDS); // 앞 시연의 마지막 음성이 남아 있으면 끊고 시작
       this.playing = true;
       if (this.onChange) this.onChange(true);
     } catch (err) { console.warn('demo.play', err); safeStop(map); }
   },
-  stop(map) { if (S) safeStop(map || M); else voice.stop(); }, // 끝난 뒤 남은 마무리 음성도 멈춘다
+  stop(map) { if (S) safeStop(map || M); else { voice.stop(); sfx.stop(); } }, // 끝난 뒤 남은 마무리 음성도 멈춘다
   toggle(map) { if (this.playing) this.stop(map); else this.play(map); },
 
   // 일시정지: 맵의 시간을 멈춘다(그리기는 계속 — 일시정지 표시·진행 막대가 보이게)
   get paused() { return !!(S && S.paused); },
-  pause(map) { if (!S) return; if (!S.paused) S.pausedAt = performance.now(); S.paused = true; (map || M).freeze = true; voice.pause(); },
-  resume(map) { if (!S) return; S.paused = false; (map || M).freeze = false; voice.resume(); },
+  pause(map) { if (!S) return; if (!S.paused) S.pausedAt = performance.now(); S.paused = true; (map || M).freeze = true; voice.pause(); sfx.pause(); },
+  resume(map) { if (!S) return; S.paused = false; (map || M).freeze = false; voice.resume(); sfx.resume(); },
   togglePause(map) { if (S && S.paused) this.resume(map); else this.pause(map); },
   // 이동: 시연은 패킷이 도착해야 다음 일이 일어나므로 중간으로 바로 뛸 수 없다. 처음부터 다시 재생해 그 시각까지 빠르게 돌린다(멈춰 있었으면 멈춘 채로).
   seek(map, t) {
@@ -207,7 +209,7 @@ function restore(map, st) {
 function teardown(map, fit, keepVoice) {
   const st = S; if (!st) return;
   S = null;
-  map.freeze = false; CTL.scrub = null; if (!keepVoice) voice.stop();
+  map.freeze = false; CTL.scrub = null; if (!keepVoice) { voice.stop(); sfx.stop(); }
   for (let i = map.ents.length - 1; i >= 0; i--) if (map.ents[i].demoActor) map.ents.splice(i, 1);
   undim();
   st.hid.forEach((e) => { e.hide = false; });
@@ -367,6 +369,7 @@ function run(map, st, s) {
     case 'tint': st.tint = { a: tintNow(st), b: s.v, t0: T, dur: s.dur || 1 }; break;
     case 'gate': st.ped = s.v ? 1 : 0; break;
     case 'vo': if (!QUIET) voice.say(s.voice); break; // 자막 없이 음성만 (마지막 타이틀 카드 문구)
+    case 'sfx': if (!QUIET) sfx.play(s.name); break; // 효과음 (줄 세우지 않고 바로)
     case 'end': teardown(map, true, true); break;
     default: break;
   }
