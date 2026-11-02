@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AXIS · 웅비대대 에이전트 포털</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- 시작 화면 (src/title.js) -->
+  <section class="stage" id="stage-title" aria-label="AXIS 웅비대대 에이전트 포털 시작 화면">
+    <canvas class="t-scene" aria-hidden="true"></canvas>
+    <div class="t-wrap">
+      <header class="t-title">
+        <p class="t-eyebrow">스마트 부대 가상환경 · 2040.07</p>
+        <h1 class="t-logo" data-text="AXIS">AXIS</h1>
+        <div class="t-rule" aria-hidden="true"></div>
+        <p class="t-sub">웅비대대 에이전트 포털</p>
+        <p class="t-tag">AI 에이전트와 함께 강해지는 웅비대대</p>
+        <nav class="t-menu" aria-label="시작 메뉴">
+          <button class="t-item" type="button" data-id="ambient" aria-current="true"><i class="cur"></i><span class="k">부대 들어가기</span><span class="s">평소 모드</span></button>
+          <button class="t-item" type="button" data-id="demo"><i class="cur"></i><span class="k">1분 시연 보기</span><span class="s">68초</span></button>
+          <button class="t-item" type="button" data-id="sheet"><i class="cur"></i><span class="k">캐릭터 시트</span><span class="s">캐릭터·차량</span></button>
+        </nav>
+        <p class="t-hint"><span class="keys">↑ ↓ 고르기 · <b>ENTER</b> 시작</span><span class="touch"><b>눌러서 시작</b></span></p>
+      </header>
+      <footer class="t-foot">AXIS · 웅비대대 · 글꼴 Galmuri (OFL 1.1)</footer>
+    </div>
+    <div class="t-boot" hidden>
+      <div class="t-card" role="dialog" aria-modal="true" aria-labelledby="t-boot-title">
+        <h2 id="t-boot-title">에이전트 연결</h2>
+        <p class="t-lead"></p>
+        <ul class="t-list"></ul>
+        <div class="t-bar"><i></i></div>
+        <p class="t-done" hidden></p>
+        <p class="t-esc">Esc 취소</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 부대 맵 -->
+  <section class="stage hidden" id="stage-map" aria-label="웅비대대 픽셀 부대 맵">
+    <canvas id="map-canvas" role="img" aria-label="웅비대대 전체 맵"></canvas>
+    <header class="topbar">
+      <a class="brand" href="#title" title="시작 화면으로">
+        <span class="logo">AXIS</span>
+        <span class="divider"></span>
+        <div class="brand-text">
+          <span class="brand-title">웅비대대 · 강원 철원</span>
+          <span class="brand-sub">2040.07 · 스마트 부대 가상환경</span>
+        </div>
+      </a>
+      <nav id="places" class="row" aria-label="장소 이동"></nav>
+      <div class="row tools">
+        <button type="button" class="pbtn on" id="btn-flow" aria-pressed="true">데이터 흐름</button>
+        <button type="button" class="pbtn on" id="btn-log" aria-pressed="true">통신 로그</button>
+        <span class="gap"></span>
+        <button type="button" class="pbtn on" id="btn-fit" aria-pressed="true" aria-label="맵 전체 보기">전체</button>
+        <button type="button" class="pbtn" id="btn-zout" aria-label="축소">-</button>
+        <span class="zoom-level" id="zoom-level" aria-label="현재 배율">67%</span>
+        <button type="button" class="pbtn" id="btn-zin" aria-label="확대">+</button>
+        <button type="button" class="pbtn demo-btn" id="btn-demo" aria-pressed="false" title="1분 시연 재생 (D) · 중지 (Esc)">시연 재생</button>
+        <a href="#sheet" class="pbtn link">캐릭터 시트</a>
+      </div>
+    </header>
+    <div class="hint">휠 확대·축소 · 드래그 이동 &#160;|&#160; 에이전트(◆)를 누르면 분석 화면 · 캐릭터·CCTV에 마우스를 올리면 정보 &#160;|&#160; 단축키 +·- 확대, 0 전체, F 데이터 흐름, L 통신 로그, D 시연</div>
+  </section>
+
+  <!-- 캐릭터 시트 -->
+  <section class="stage hidden" id="stage-sheet" aria-label="픽셀 캐릭터 · 차량 시트">
+    <canvas id="sheet-canvas" aria-hidden="true"></canvas>
+    <div class="sheet-head">
+      <h1>웅비대대 픽셀 캐릭터 · 차량 시트</h1>
+      <p>캐릭터 32×48px · 탑다운 3/4 시점 · 정면/측면/후면 · 걷기 3프레임 · 3배 확대 표시 · 5색 디지털 위장 · 명찰·계급장·태극기·부대마크 부착</p>
+    </div>
+    <a href="#map" class="pbtn back">부대 맵으로</a>
+    <div id="sheet-cards"></div>
+    <div class="strip" id="sheet-strip">
+      <h2 style="left: 24px">차량 · 장비 (위에서 본 모습, 2배)</h2>
+      <span class="cap" style="left: 48px; top: 144px">K-151 전술차량</span>
+      <span class="cap" style="left: 252px; top: 144px">5톤 트럭</span>
+      <span class="cap" style="left: 472px; top: 144px">구급차</span>
+      <span class="cap" style="left: 600px; top: 144px">정찰 드론</span>
+      <h2 style="left: 728px">계급장 · 전투복 왼쪽 가슴 (간부는 전투모 정면에도)</h2>
+      <p class="note">명찰 오른쪽 가슴 · 육군 표지 왼쪽 가슴 위 · 태극기 오른팔(훈련 시 위장색) · 부대마크 왼팔</p>
+    </div>
+  </section>
+
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# 저장소에는 포털 코드만 올린다.
+# 보고용 화면 캡처·시연 영상
+asset/
+# ArmyGPT 실제 화면 캡처·생성 문서(공개 저장소에는 넣지 않음)
+assets/armygpt/
+# 이 PC에서만 쓰는 자산 제작·녹화 스크립트와 운영 메모
+tools/
+README.local.md
+# 개발 도구 설정·임시 파일
+.claude/
+.playwright-mcp/
+node_modules/
+*.log

@@ -1,0 +1,14 @@
+{
+  "name": "agent-portal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AXIS 웅비대대 에이전트 포털 — 픽셀 부대 맵과 에이전트 데이터 흐름 시각화",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs --open",
+    "serve": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
